@@ -16,7 +16,6 @@ import re
 import sys
 import logging
 from pathlib import Path
-from http.cookiejar import MozillaCookieJar
 
 import requests
 from dotenv import load_dotenv
@@ -62,10 +61,27 @@ def check_config():
 
 
 def make_session() -> requests.Session:
-    jar = MozillaCookieJar(COOKIES_FILE)
-    jar.load(ignore_discard=True, ignore_expires=True)
     session = requests.Session()
-    session.cookies = jar
+    # Parse the Netscape cookies file manually so session cookies (expiry=0)
+    # are not skipped by MozillaCookieJar's strict loader.
+    with open(COOKIES_FILE, "r", encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            parts = line.split("\t")
+            if len(parts) < 7:
+                continue
+            domain, _, path, secure, expiry_str, name, value = parts[:7]
+            try:
+                expiry = int(expiry_str) if expiry_str else 0
+            except ValueError:
+                expiry = 0
+            session.cookies.set(
+                name, value,
+                domain=domain.lstrip("."),
+                path=path,
+            )
     session.headers.update({
         "User-Agent": "Mozilla/5.0 (canvas-sync/1.0)",
         "Accept": "application/json",
@@ -172,8 +188,12 @@ def sync_course(session: requests.Session):
                     log.warning("  cannot fetch file info for %s", title)
                     continue
                 fdata = file_info.json()
+                dl_url = fdata.get("url", "")
+                if not dl_url:
+                    log.warning("  no download URL for %s (may be restricted)", title)
+                    continue
                 filename = safe_name(fdata.get("filename") or fdata.get("display_name") or title)
-                download_file(session, fdata["url"], module_path / filename)
+                download_file(session, dl_url, module_path / filename)
 
             elif item_type == "ExternalUrl":
                 ext_url = item.get("external_url", "")
