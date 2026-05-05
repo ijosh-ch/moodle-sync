@@ -223,6 +223,11 @@ class RequestHelper:
 
     def log_response(self, function: str, data: Dict[str, str], url: str, json_result: Dict):
         if self.opts.log_responses and function not in ['tool_mobile_get_autologin_key']:
+            if data is not None and isinstance(data, dict):
+                data = data.copy()
+                for censor in ['privatetoken', 'password', 'wstoken']:
+                    if censor in data:
+                        data[censor] = 'censored'
             with open(self.log_responses_to, 'a', encoding='utf-8') as response_log_file:
                 response_log_file.write(f'URL: {url}\n')
                 response_log_file.write(f'Function: {function}\n\n')

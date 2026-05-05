@@ -7,6 +7,8 @@ import traceback
 from logging.handlers import RotatingFileHandler
 from shutil import which
 
+from dotenv import load_dotenv
+
 import colorlog
 import requests  # noqa: F401 pylint: disable=unused-import
 import sentry_sdk
@@ -203,6 +205,11 @@ def get_parser():
             return path
         raise argparse.ArgumentTypeError(f'"{str(path)}" is not a valid path. Make sure the directory exists.')
 
+    _env_path = os.environ.get('MOODLE_SYNC_PATH')
+    _env_token = os.environ.get('MOODLE_TOKEN')
+    _env_username = os.environ.get('MOODLE_USERNAME')
+    _env_password = os.environ.get('MOODLE_PASSWORD')
+
     parser = argparse.ArgumentParser(
         description=('Moodle-DL helps you download all the course files from your Moodle account.')
     )
@@ -353,37 +360,38 @@ def get_parser():
         '-u',
         '--username',
         dest='username',
-        default=None,
+        default=_env_username,
         type=str,
-        help=('Specify username to skip the query when creating a new token.'),
+        help=('Specify username to skip the query when creating a new token. (env: MOODLE_USERNAME)'),
     )
 
     parser.add_argument(
         '-pw',
         '--password',
         dest='password',
-        default=None,
+        default=_env_password,
         type=str,
-        help=('Specify password to skip the query when creating a new token.'),
+        help=('Specify password to skip the query when creating a new token. (env: MOODLE_PASSWORD)'),
     )
 
     parser.add_argument(
         '-tk',
         '--token',
         dest='token',
-        default=None,
+        default=_env_token,
         type=str,
-        help=('Specify token to skip the interactive login procedure.'),
+        help=('Specify token to skip the interactive login procedure. (env: MOODLE_TOKEN)'),
     )
     parser.add_argument(
         '-p',
         '--path',
         dest='path',
-        default='.',
+        default=_env_path if _env_path is not None else '.',
         type=_dir_path,
         help=(
             'Sets the location of the configuration, logs and downloaded files. PATH must be an'
-            + ' existing directory in which you have read and write access. (default: current working directory)'
+            + ' existing directory in which you have read and write access.'
+            + ' (default: current working directory, env: MOODLE_SYNC_PATH)'
         ),
     )
 
@@ -557,6 +565,7 @@ def main(args=None):
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     just_fix_windows_console()
+    load_dotenv()
     opts = post_process_opts(MoodleDlOpts(**vars(get_parser().parse_args(args))))
     setup_logger(opts)
 
