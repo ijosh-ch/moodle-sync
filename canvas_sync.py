@@ -167,10 +167,8 @@ def sync_course(session: requests.Session):
         return
 
     for idx, module in enumerate(modules, start=1):
-        folder_name = safe_name(f"{idx:02d} - {module['name']}")
-        module_path = course_path / folder_name
-        module_path.mkdir(parents=True, exist_ok=True)
-        log.info("[%s]", folder_name)
+        week_prefix = f"WEEK-{idx}"
+        log.info("[%s - %s]", week_prefix, module['name'])
 
         items = get_all(session, f"{base}/courses/{COURSE_ID}/modules/{module['id']}/items")
 
@@ -193,11 +191,11 @@ def sync_course(session: requests.Session):
                     log.warning("  no download URL for %s (may be restricted)", title)
                     continue
                 filename = safe_name(fdata.get("filename") or fdata.get("display_name") or title)
-                download_file(session, dl_url, module_path / filename)
+                download_file(session, dl_url, course_path / f"{week_prefix}_{filename}")
 
             elif item_type == "ExternalUrl":
                 ext_url = item.get("external_url", "")
-                dest = module_path / f"{title}.url"
+                dest = course_path / f"{week_prefix}_{title}.url"
                 save_url_shortcut(dest, ext_url, title)
 
             elif item_type == "Page":
@@ -208,7 +206,7 @@ def sync_course(session: requests.Session):
                 if page_resp.status_code != 200:
                     continue
                 page_body = page_resp.json().get("body") or ""
-                dest = module_path / f"{title}.html"
+                dest = course_path / f"{week_prefix}_{title}.html"
                 if not dest.exists():
                     dest.write_text(
                         f"<!DOCTYPE html><html><head><meta charset='utf-8'>"
@@ -221,9 +219,8 @@ def sync_course(session: requests.Session):
 
             else:
                 # Assignment, Discussion, Quiz, SubHeader — save as shortcut
-                content_id = item.get("content_id") or item.get("id")
                 html_url = item.get("html_url") or f"{CANVAS_URL}/courses/{COURSE_ID}"
-                dest = module_path / f"{title}.url"
+                dest = course_path / f"{week_prefix}_{title}.url"
                 save_url_shortcut(dest, html_url, title)
 
     log.info("Sync complete → %s", SYNC_PATH)

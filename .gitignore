@@ -15,3 +15,5 @@ MoodleDL.log
 *.env
 cookies.txt
 *_cookies.txt
+moodle_sync.json
+.moodle_sync_meta.json

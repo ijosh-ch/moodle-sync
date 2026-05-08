@@ -1,0 +1,28 @@
+{
+  "sites": [
+    {
+      "name": "NTUST Moodle (cookie auth)",
+      "url": "https://moodle2.ntust.edu.tw",
+      "cookies_file": "moodle2.ntust.edu.tw_cookies.txt",
+      "courses": [
+        {
+          "id": 18505,
+          "name": "LLM and Applications",
+          "sync_path": "/Users/ijosh/Library/CloudStorage/OneDrive-國立臺灣科技大學/Courses/114 Spring/LLM and Applications/Moodle"
+        }
+      ]
+    },
+    {
+      "name": "NTU Moodle (token auth)",
+      "url": "https://moodle.ntu.edu.tw",
+      "token": "YOUR_NTU_WSTOKEN_HERE",
+      "courses": [
+        {
+          "id": 12345,
+          "name": "Another Course",
+          "sync_path": "/absolute/path/to/another/folder"
+        }
+      ]
+    }
+  ]
+}
